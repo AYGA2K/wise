@@ -1,7 +1,7 @@
 import { existsSync, readFileSync, readdirSync, statSync } from "fs";
-import { join } from "path";
-import { hashObject } from "../helpers/hashObject";
+import { resolve } from "path";
 import { LINE_LEN, MODE_LEN, PATH_LEN } from "../types/constants";
+import { createHash } from "crypto";
 
 interface IndexEntry {
   mode: string;
@@ -9,8 +9,64 @@ interface IndexEntry {
   hash: string;
 }
 
+export function status() {
+  const index = loadIndex();
+  const staged = new Map(index.map(e => [resolve(e.path), e.hash]));
+  const workingFiles = walkDir(resolve(".")); // absolute paths
+
+  const modified: string[] = [];
+  const untracked: string[] = [];
+  const stagedFiles: string[] = Array.from(staged.keys());
+
+  for (const file of workingFiles) {
+    if (!staged.has(file)) {
+      // not staged -> untracked
+      untracked.push(file);
+      continue;
+    }
+
+    // file is staged, check if modified
+    try {
+      const content = readFileSync(file);
+      const hash = createHash("sha1")
+        .update(`blob ${content.length}\0`)
+        .update(content)
+        .digest("hex");
+
+      if (staged.get(file) !== hash) {
+        modified.push(file);
+      }
+
+    } catch (err) {
+      console.error(err);
+    }
+
+  }
+
+  if (stagedFiles.length) {
+    const stagedOnly = stagedFiles.filter(f => !modified.includes(f));
+    if (stagedOnly.length) {
+      console.log("Changes to be committed:");
+      stagedOnly.forEach(f => console.log("  " + f));
+    }
+  }
+  if (modified.length) {
+    console.log("Changes not staged for commit:");
+    modified.forEach(f => console.log("  " + f));
+  }
+  if (untracked.length) {
+    console.log("Untracked files:");
+    untracked.forEach(f => console.log("  " + f));
+  }
+
+  if (!stagedFiles.length && !modified.length && !untracked.length) {
+    console.log("nothing to commit, working tree clean");
+  }
+
+}
+
 function loadIndex(): IndexEntry[] {
-  const indexPath = "./.wise/index";
+  const indexPath = resolve(".wise", "index"); // absolute path
   if (!existsSync(indexPath)) return [];
   const buf = readFileSync(indexPath);
   const entries: IndexEntry[] = [];
@@ -30,8 +86,8 @@ function loadIndex(): IndexEntry[] {
 function walkDir(dir: string, fileList: string[] = []): string[] {
   const files = readdirSync(dir);
   for (const file of files) {
-    const filePath = join(dir, file);
-    if (filePath.startsWith(".wise")) continue; // skip repo internals
+    const filePath = resolve(dir, file); // absolute path
+    if (filePath.includes(`${resolve(".git")}`) || filePath.includes(`${resolve("node_modules")}`) || filePath.includes(`${resolve(".wise")}`)) continue; // ignore .wise , .git and node_modules
     const stats = statSync(filePath);
     if (stats.isDirectory()) {
       walkDir(filePath, fileList);
@@ -40,42 +96,4 @@ function walkDir(dir: string, fileList: string[] = []): string[] {
     }
   }
   return fileList;
-}
-
-export function status() {
-  const index = loadIndex();
-  const staged = new Map(index.map(e => [e.path, e.hash]));
-  const workingFiles = walkDir(".");
-
-  const modified: string[] = [];
-  const untracked: string[] = [];
-  const stagedFiles: string[] = Array.from(staged.keys());
-
-  for (const file of workingFiles) {
-    const content = readFileSync(file);
-    const hash = hashObject("blob", content);
-
-    if (!staged.has(file)) {
-      untracked.push(file);
-    } else if (staged.get(file) !== hash) {
-      modified.push(file);
-    }
-  }
-
-  if (stagedFiles.length) {
-    console.log("Changes to be committed:");
-    stagedFiles.forEach(f => console.log("  " + f));
-  }
-  if (modified.length) {
-    console.log("Changes not staged for commit:");
-    modified.forEach(f => console.log("  " + f));
-  }
-  if (untracked.length) {
-    console.log("Untracked files:");
-    untracked.forEach(f => console.log("  " + f));
-  }
-
-  if (!stagedFiles.length && !modified.length && !untracked.length) {
-    console.log("nothing to commit, working tree clean");
-  }
 }

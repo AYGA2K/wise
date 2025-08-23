@@ -1,12 +1,13 @@
-import { mkdirSync, readFileSync, writeFileSync } from "fs";
+import { mkdirSync, readFileSync, writeFileSync, existsSync } from "fs";
 import { createHash } from "crypto";
 import { deflateSync } from "zlib";
+import { resolve } from "path";
 import { TreeEntryTypes, type TreeEntry } from "../types/treeEntry";
 import { HASH_LEN, LINE_LEN, MODE_LEN, PATH_LEN } from "../types/constants";
 
 function parseIndex(): { mode: string; path: string; hash: Buffer }[] {
-  const indexPath = "./.wise/index";
-  if (!require("fs").existsSync(indexPath)) return [];
+  const indexPath = resolve(".wise", "index"); // absolute path
+  if (!existsSync(indexPath)) return [];
 
   const data = readFileSync(indexPath, "utf8");
   const lines = data.match(new RegExp(`.{1,${LINE_LEN}}`, "g")) || [];
@@ -22,8 +23,6 @@ function parseIndex(): { mode: string; path: string; hash: Buffer }[] {
 // Recursive function to build trees
 function buildTree(entries: { mode: string; path: string; hash: Buffer }[], basePath = ""): string {
   const treeEntries: TreeEntry[] = [];
-
-  // Group entries by immediate child (file or subdirectory)
   const dirs: Record<string, { mode: string; path: string; hash: Buffer }[]> = {};
 
   for (const entry of entries) {
@@ -41,11 +40,9 @@ function buildTree(entries: { mode: string; path: string; hash: Buffer }[], base
       });
     } else {
       // Subdirectory
-      if (parts[0]) {
-        const dirName = parts[0];
-        if (!dirs[dirName]) {
-          dirs[dirName] = [];
-        }
+      const dirName = parts[0];
+      if (dirName) {
+        dirs[dirName] = dirs[dirName] || [];
         dirs[dirName].push(entry);
       }
     }
@@ -56,7 +53,7 @@ function buildTree(entries: { mode: string; path: string; hash: Buffer }[], base
     const subtreeHash = Buffer.from(buildTree(dirs[dirName]!, basePath + dirName + "/"), "hex");
     treeEntries.push({
       name: dirName,
-      mode: "40000",
+      mode: "40000", // Directory (tree object)
       hash: subtreeHash,
       type: TreeEntryTypes.TREE
     });
@@ -79,9 +76,11 @@ function buildTree(entries: { mode: string; path: string; hash: Buffer }[], base
   const hashHex = createHash("sha1").update(content).digest("hex");
   const dir = hashHex.substring(0, 2);
   const fileName = hashHex.substring(2);
-  mkdirSync(`.wise/objects/${dir}`, { recursive: true });
+  const objectsDir = resolve(".wise", "objects", dir); // absolute path
+  mkdirSync(objectsDir, { recursive: true });
+  const objectPath = resolve(objectsDir, fileName); // absolute path
   const compressed = deflateSync(content);
-  writeFileSync(`.wise/objects/${dir}/${fileName}`, compressed);
+  writeFileSync(objectPath, compressed);
 
   return hashHex;
 }

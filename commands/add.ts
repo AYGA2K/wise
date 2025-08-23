@@ -1,4 +1,5 @@
 import { openSync, readFileSync, writeSync, appendFileSync, existsSync, fstatSync, closeSync } from "fs";
+import { resolve } from "path";
 import { hashObject } from "../helpers/hashObject";
 import { LINE_LEN, MODE_LEN, PATH_LEN } from "../types/constants";
 
@@ -8,10 +9,11 @@ function padRight(str: string, length: number): string {
 }
 
 export function add(filePath: string) {
-  const indexPath = "./.wise/index";
-  const mode = "100644";
+  // Absolute path
+  const INDEX_PATH = resolve(".wise", "index");
+  const mode = "100644"; // Normal file, read/write for owner, read-only for others
 
-  //Read file contents and hash as a blob
+  // Read file contents and hash as a blob
   const fileContent = readFileSync(filePath);
   const hash = hashObject("blob", fileContent);
 
@@ -19,16 +21,16 @@ export function add(filePath: string) {
   const paddedPath = padRight(filePath, PATH_LEN);
   const paddedLine = `${paddedMode} ${paddedPath} ${hash}\n`;
 
-  if (!existsSync(indexPath)) {
-    appendFileSync(indexPath, paddedLine);
+  if (!existsSync(INDEX_PATH)) {
+    appendFileSync(INDEX_PATH, paddedLine);
     return;
   }
 
-  const fd = openSync(indexPath, "r+");
+  const fd = openSync(INDEX_PATH, "r+");
   const stats = fstatSync(fd);
   const fileSize = stats.size;
   const buffer = Buffer.alloc(fileSize);
-  readFileSync(indexPath).copy(buffer, 0, 0, fileSize);
+  readFileSync(INDEX_PATH).copy(buffer, 0, 0, fileSize);
 
   const numLines = Math.floor(fileSize / LINE_LEN);
   let found = false;
@@ -39,7 +41,6 @@ export function add(filePath: string) {
     const pathInLine = lineBuf.toString("utf8", MODE_LEN + 1, MODE_LEN + 1 + PATH_LEN).trim();
 
     if (pathInLine === filePath) {
-      // Overwrite in-place with new hash if file changed
       found = true;
       break;
     }
@@ -47,9 +48,8 @@ export function add(filePath: string) {
   }
 
   if (!found) {
-    appendFileSync(indexPath, paddedLine);
+    appendFileSync(INDEX_PATH, paddedLine);
   }
 
   closeSync(fd);
 }
-
