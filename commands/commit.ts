@@ -1,4 +1,4 @@
-import { writeFileSync, readFileSync } from "fs";
+import { writeFileSync, readFileSync, existsSync } from "fs";
 import { hashObject } from "../helpers/hashObject";
 import { writeTree } from "../helpers/writeTree";
 import { getConfig } from "./config";
@@ -39,7 +39,12 @@ export function commit(message: string, branch: string = "main") {
   const commitSHA = hashObject("commit", Buffer.from(content));
 
   // Update branch ref
-  writeFileSync(".git/refs/heads/" + branch, commitSHA + "\n");
+  writeFileSync(".wise/refs/heads/" + branch, commitSHA + "\n");
+
+  const indexPath = "./.wise/index";
+  if (existsSync(indexPath)) {
+    writeFileSync(indexPath, ""); // clear staging area
+  }
 
   return commitSHA;
 }

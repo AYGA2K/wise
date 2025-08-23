@@ -2,6 +2,7 @@ export enum Commands {
   INIT = 'init',
   ADD = "add",
   COMMIT = "commit",
-  CONFIG = "config"
+  CONFIG = "config",
+  STATUS = "status"
 }
 

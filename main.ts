@@ -4,6 +4,7 @@ import { init } from "./commands/init";
 import { setConfig, getConfig } from "./commands/config";
 import { Commands } from "./types/commands";
 import { Flags } from "./types/flags";
+import { status } from "./commands/status";
 
 const args = process.argv.slice(2);
 const command = args[0] || "";
@@ -17,7 +18,11 @@ switch (command) {
     const indexofmessageFlag = args.indexOf(Flags.M);
     if (indexofmessageFlag !== -1) {
       const message = args[indexofmessageFlag + 1] || "";
-      console.log(commit(message));
+      try {
+        console.log(commit(message));
+      } catch (error) {
+        console.log(error)
+      }
     } else {
       console.log("Error: Commit message missing. Usage: commit -m <message>");
     }
@@ -54,11 +59,18 @@ switch (command) {
     break;
   }
 
+  case Commands.STATUS: {
+    status();
+    break;
+  }
+
+
   default:
     console.log("Supported commands:");
     console.log("  init              Initialize a new repository");
     console.log("  add <path>        Add a file to staging");
     console.log("  commit -m <msg>   Commit staged changes with a message");
     console.log("  config <k> [v]    Get or set configuration");
+    console.log("  status            Show working tree status");
     break;
 }
