@@ -18,7 +18,7 @@ export function add(filePath: string) {
 	}
 	// Read existing index content and split into lines
 	const content = readFileSync(INDEX_PATH, "utf8");
-	const lines = content.split("\n");
+	const lines = content.split("\n").filter((line) => line.trim() !== ""); // Filter out empty lines
 
 	let found = false;
 
@@ -38,5 +38,5 @@ export function add(filePath: string) {
 	}
 
 	// Write updated index back to disk
-	writeFileSync(INDEX_PATH, newLines.join(""));
+	writeFileSync(INDEX_PATH, newLines.join("\n"));
 }
