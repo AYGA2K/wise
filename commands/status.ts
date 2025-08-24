@@ -60,22 +60,30 @@ export function status() {
 	);
 	if (stagedOnly.length > 0) {
 		let stagedOutput = "Changes to be committed:\n";
-		stagedOnly.forEach((f) => (stagedOutput += `  modified:   ${f}\n`));
+		stagedOnly.forEach((f) => {
+			stagedOutput += `  modified:   ${f}\n`;
+		});
 		outputSections.push(stagedOutput);
 	}
 
 	// Unstaged changes
 	if (modified.length > 0 || deleted.length > 0) {
 		let unstagedOutput = "Changes not staged for commit:\n";
-		modified.forEach((f) => (unstagedOutput += `  modified:   ${f}\n`));
-		deleted.forEach((f) => (unstagedOutput += `  deleted:    ${f}\n`));
+		modified.forEach((f) => {
+			unstagedOutput += `  modified:   ${f}\n`;
+		});
+		deleted.forEach((f) => {
+			unstagedOutput += `  deleted:    ${f}\n`;
+		});
 		outputSections.push(unstagedOutput);
 	}
 
 	// Untracked files
 	if (untracked.length > 0) {
 		let untrackedOutput = "Untracked files:\n";
-		untracked.forEach((f) => (untrackedOutput += `  ${f}\n`));
+		untracked.forEach((f) => {
+			untrackedOutput += `  ${f}\n`;
+		});
 		outputSections.push(untrackedOutput);
 	}
 
