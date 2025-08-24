@@ -31,41 +31,41 @@ npm run build
 ### Initialize a new repository
 
 ```bash
-node dist/index.js init
+node dist/main.js init
 ```
 
 ### Configure user settings
 
 ```bash
 # Set configuration
-node dist/index.js config user.name "Your Name"
-node dist/index.js config user.email "your.email@example.com"
+node dist/main.js config user.name "Your Name"
+node dist/main.js config user.email "your.email@example.com"
 
 # View configuration
-node dist/index.js config user.name
+node dist/main.js config user.name
 ```
 
 ### Stage files
 
 ```bash
 # Stage a single file
-node dist/index.js add filename.txt
+node dist/main.js add filename.txt
 
 # Stage multiple files
-node dist/index.js add file1.txt
-node dist/index.js add file2.txt
+node dist/main.js add file1.txt
+node dist/main.js add file2.txt
 ```
 
 ### Commit changes
 
 ```bash
 # Commit staged changes with a message
-node dist/index.js commit -m "Initial commit"
+node dist/main.js commit -m "Initial commit"
 ```
 
 ### Check repository status
 
 ```bash
 # View current working tree status
-node dist/index.js status
+node dist/main.js status
 ```
