@@ -24,6 +24,9 @@ npm install
 # Build the project
 npm run build
 
+# Run tests 
+npm run test
+
 ```
 
 ## Usage
