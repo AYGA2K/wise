@@ -4,6 +4,7 @@ import { hashObject } from "../helpers/hashObject";
 
 export function add(filePath: string) {
 	const INDEX_PATH = resolve(".wise", "index");
+	// File mode "100644" means a normal non-executable file
 	const mode = "100644";
 
 	const fileContent = readFileSync(filePath);
@@ -15,23 +16,27 @@ export function add(filePath: string) {
 		writeFileSync(INDEX_PATH, entry);
 		return;
 	}
-
+	// Read existing index content and split into lines
 	const content = readFileSync(INDEX_PATH, "utf8");
-	const lines = content.split("\n").filter((line) => line.trim());
+	const lines = content.split("\n");
 
 	let found = false;
+
+	// Update entry if file already exists in index
 	const newLines = lines.map((line) => {
 		const [existingMode, existingPath, existingHash] = line.split("|");
 		if (existingPath === filePath) {
 			found = true;
-			return entry.trim(); // Replace with new entry
+			return entry; // replace old line
 		}
-		return line;
+		return line; // keep unchanged line
 	});
 
+	// If file was not found in index, add it as new
 	if (!found) {
-		newLines.push(entry.trim());
+		newLines.push(entry);
 	}
 
-	writeFileSync(INDEX_PATH, newLines.join("\n") + "\n");
+	// Write updated index back to disk
+	writeFileSync(INDEX_PATH, newLines.join(""));
 }
