@@ -14,29 +14,6 @@ switch (command) {
 		init();
 		break;
 
-	case Commands.COMMIT: {
-		const indexofmessageFlag = args.indexOf(Flags.M);
-		if (indexofmessageFlag !== -1) {
-			const message = args[indexofmessageFlag + 1] || "";
-			try {
-				console.log(commit(message));
-			} catch (error) {
-				console.log(error);
-			}
-		} else {
-			console.log("Error: Commit message missing. Usage: commit -m <message>");
-		}
-		break;
-	}
-
-	case Commands.ADD:
-		if (args[1]) {
-			add(args[1]);
-		} else {
-			console.log("Error: Add requires a path. Usage: add <file>");
-		}
-		break;
-
 	case Commands.CONFIG: {
 		const key = args[1];
 		const value = args[2];
@@ -55,6 +32,29 @@ switch (command) {
 			} else {
 				console.log(`Key "${key}" not found`);
 			}
+		}
+		break;
+	}
+
+	case Commands.ADD:
+		if (args[1]) {
+			add(args[1]);
+		} else {
+			console.log("Error: Add requires a path. Usage: add <file>");
+		}
+		break;
+
+	case Commands.COMMIT: {
+		const indexofmessageFlag = args.indexOf(Flags.M);
+		if (indexofmessageFlag !== -1) {
+			const message = args[indexofmessageFlag + 1] || "";
+			try {
+				console.log(commit(message));
+			} catch (error) {
+				console.log(error);
+			}
+		} else {
+			console.log("Error: Commit message missing. Usage: commit -m <message>");
 		}
 		break;
 	}
