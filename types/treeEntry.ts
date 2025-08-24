@@ -1,10 +1,10 @@
 export enum TreeEntryTypes {
-  BLOB = "blob",
-  TREE = "tree"
+	BLOB = "blob",
+	TREE = "tree",
 }
 export type TreeEntry = {
-  name: string
-  type: TreeEntryTypes
-  mode: string
-  hash: Buffer;
-}
+	name: string;
+	type: TreeEntryTypes;
+	mode: string;
+	hash: Buffer;
+};

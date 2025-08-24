@@ -1,55 +1,37 @@
-import { openSync, readFileSync, writeSync, appendFileSync, existsSync, fstatSync, closeSync } from "fs";
+import { existsSync, readFileSync, writeFileSync } from "fs";
 import { resolve } from "path";
 import { hashObject } from "../helpers/hashObject";
-import { LINE_LEN, MODE_LEN, PATH_LEN } from "../types/constants";
-
-function padRight(str: string, length: number): string {
-  if (str.length > length) return str.slice(0, length);
-  return str + " ".repeat(length - str.length);
-}
 
 export function add(filePath: string) {
-  // Absolute path
-  const INDEX_PATH = resolve(".wise", "index");
-  const mode = "100644"; // Normal file, read/write for owner, read-only for others
+	const INDEX_PATH = resolve(".wise", "index");
+	const mode = "100644";
 
-  // Read file contents and hash as a blob
-  const fileContent = readFileSync(filePath);
-  const hash = hashObject("blob", fileContent);
+	const fileContent = readFileSync(filePath);
+	const hash = hashObject("blob", fileContent);
 
-  const paddedMode = padRight(mode, MODE_LEN);
-  const paddedPath = padRight(filePath, PATH_LEN);
-  const paddedLine = `${paddedMode} ${paddedPath} ${hash}\n`;
+	const entry = `${mode}|${filePath}|${hash}\n`;
 
-  if (!existsSync(INDEX_PATH)) {
-    appendFileSync(INDEX_PATH, paddedLine);
-    return;
-  }
+	if (!existsSync(INDEX_PATH)) {
+		writeFileSync(INDEX_PATH, entry);
+		return;
+	}
 
-  const fd = openSync(INDEX_PATH, "r+");
-  const stats = fstatSync(fd);
-  const fileSize = stats.size;
-  const buffer = Buffer.alloc(fileSize);
-  readFileSync(INDEX_PATH).copy(buffer, 0, 0, fileSize);
+	const content = readFileSync(INDEX_PATH, "utf8");
+	const lines = content.split("\n").filter((line) => line.trim());
 
-  const numLines = Math.floor(fileSize / LINE_LEN);
-  let found = false;
+	let found = false;
+	const newLines = lines.map((line) => {
+		const [existingMode, existingPath, existingHash] = line.split("|");
+		if (existingPath === filePath) {
+			found = true;
+			return entry.trim(); // Replace with new entry
+		}
+		return line;
+	});
 
-  for (let i = 0; i < numLines; i++) {
-    const offset = i * LINE_LEN;
-    const lineBuf = buffer.subarray(offset, offset + LINE_LEN);
-    const pathInLine = lineBuf.toString("utf8", MODE_LEN + 1, MODE_LEN + 1 + PATH_LEN).trim();
+	if (!found) {
+		newLines.push(entry.trim());
+	}
 
-    if (pathInLine === filePath) {
-      found = true;
-      break;
-    }
-    writeSync(fd, paddedLine, offset, "utf8");
-  }
-
-  if (!found) {
-    appendFileSync(INDEX_PATH, paddedLine);
-  }
-
-  closeSync(fd);
+	writeFileSync(INDEX_PATH, newLines.join("\n") + "\n");
 }
