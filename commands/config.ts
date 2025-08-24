@@ -54,9 +54,9 @@ export function setConfig(key: string, value: string) {
 	config[key] = value;
 
 	// Write back to file
-	const newContent = Object.entries(config)
-		.map(([k, v]) => `${k}=${v}`)
-		.join("\n");
-
-	writeFileSync(CONFIG_FILE, newContent + "\n", "utf8");
+	let newContent = "";
+	for (const key in config) {
+		newContent += `${key}=${config[key]}\n`;
+	}
+	writeFileSync(CONFIG_FILE, newContent, "utf8");
 }
